@@ -1,20 +1,11 @@
 package main
 
-import (
-	"log"
-	"net"
-)
+import "log"
 
 func main() {
-	cn, err := net.Listen("tcp", "0.0.0.0:6969")
+	regEventServer, err := NewEventServer("tcp", 6969)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatal(err)
 	}
-	for {
-		conn, err := cn.Accept()
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-		go handleConn(conn)
-	}
+	regEventServer.Start()
 }

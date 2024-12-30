@@ -9,8 +9,7 @@ import (
 
 func TestEventMarshal(t *testing.T) {
 	// Actual data
-	// [49 49 48 48 48 49 58 48 49 58 49 49 58 104 101 108 108 111 32 119 111 114 108 100 10]
-	actual_d := []byte(strings.TrimSuffix("10111hello world", "\r\n"))
+	actual_d := []byte(strings.TrimSuffix("10111hello world;", "\r\n"))
 	le := uint8(len([]byte("hello world")))
 	r := RegEvent{
 		Version: byte(1),
@@ -25,7 +24,7 @@ func TestEventMarshal(t *testing.T) {
 
 func TestEventUnMarshal(t *testing.T) {
 	// Actual data
-	actual_d := []byte("10111hello world")
+	actual_d := []byte(strings.TrimSuffix("10111hello world;", "\r\n"))
 	le := uint8(len([]byte("hello world")))
 	r := &RegEvent{
 		Version: byte(1),

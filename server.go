@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net"
@@ -26,24 +27,59 @@ func NewEventServer(proto string, port uint16) (RegEventServer, error) {
 	return r, nil
 }
 
-func (r *RegEventServer) Start() {
-	for {
-		_, err := r.listner.Accept()
-		if err != nil {
-			log.Printf("E! cannot accept connection, Reason: %s", err.Error())
+func (r RegEventServer) Start() {
+	log.Println("started the event server")
+	regEvents := make(chan RegEvent)
+	go func() {
+		for {
+			conn, err := r.listner.Accept()
+			if err != nil {
+				log.Printf("E! cannot accept connection, Reason: %s", err.Error())
+			}
+			r.conn = conn
+			go func() {
+				err := readConn(r, regEvents)
+				if err != nil {
+					log.Printf("E! cannot parse data: Reason: %s", err)
+				}
+			}()
+		}
+	}()
+	for regEvent := range regEvents {
+		if bytes.Equal(regEvent.OpCode, REG_EVENT) {
+			fmt.Printf("REG EVENT %s\n", string(regEvent.Event))
+		} else if bytes.Equal(regEvent.OpCode, DEREGISTER_EVENT) {
+			fmt.Printf("DEREG EVENT %s\n", string(regEvent.Event))
+		} else if bytes.Equal(regEvent.OpCode, STATUS_EVENT) {
+			fmt.Printf("STATUS EVENTS %s\n", string(regEvent.Event))
+		} else if bytes.Equal(regEvent.OpCode, SHUTDOWN_EVENT) {
+			fmt.Printf("SHUTDOWN EVENT %s\n", string(regEvent.Event))
+		} else {
+			fmt.Printf("ERROR EVENT\n")
 		}
 	}
 }
 
-func handleConn(conn net.Conn) {
-	defer conn.Close()
-	data := make([]byte, 16)
+func readConn(r RegEventServer, regEvents chan RegEvent) error {
+	defer r.conn.Close()
+	// read upto 1024 bytes
+	data := make([]byte, 1024)
+	regEvent := RegEvent{}
+	buf := bytes.Buffer{}
 	for {
-		n, err := conn.Read(data)
+		n, err := r.conn.Read(data)
+		log.Printf("I! read %d bytes", n)
 		if err != nil {
-			conn.Close()
-			log.Fatal(err.Error())
+			return err
 		}
-		log.Printf("read %d bytes", n)
+		for _, d := range data {
+			if d == ';' {
+				if err := regEvent.Unmarshal(buf.Bytes()); err != nil {
+					return err
+				}
+				regEvents <- regEvent
+			}
+			buf.WriteByte(d)
+		}
 	}
 }
