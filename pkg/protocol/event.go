@@ -1,4 +1,4 @@
-package main
+package protocol
 
 import (
 	"bytes"
@@ -17,10 +17,10 @@ var (
 // Version:OpCode:Len:Data
 // Example: 1:RE:12:192.168.1.0
 type RegEvent struct {
-	// Version stores the version of the protocol
+	// version stores the version of the protocol
 	// V1 is for text based TCP protocol
 	// V2 will have binary based TCP protocol
-	Version byte
+	version byte
 	// Opcode can be the
 	//
 	// 1. Register(RE)(01) - takes in the hostname, ip, mac-address, uptime, type of os, timestamp when its sending
@@ -30,36 +30,45 @@ type RegEvent struct {
 	// 3. DeRegister(DR)(10) - takes in the hostname, ip, mac-address, uptime, type of os, timestamp when its sending
 	//
 	// 4. Shutdown(SH)(00) - takes in the hostname, ip, mac-address, uptime, type of os, timestamp when its sending
-	OpCode []byte // Opcode takes 2bytes
-	Len    byte   // Stores the len of the event
+	opCode []byte // Opcode takes 2bytes
+	len    byte   // Stores the len of the event
 	// Events are completed by a ';' at the end
-	Event []byte // Stores the data of the events kind of like headers with metadata
+	event []byte // Stores the data of the events kind of like headers with metadata
+}
+
+func NewRegEvent(version uint8, opCode []byte, event []byte) RegEvent {
+	return RegEvent{
+		version: version,
+		opCode:  opCode,
+		len:     uint8(len(event)),
+		event:   event,
+	}
 }
 
 func (r *RegEvent) Marshal() ([]byte, error) {
 	var b bytes.Buffer
-	fmt.Fprintf(&b, "%d%s%d%s;", r.Version, r.OpCode, r.Len, r.Event)
+	fmt.Fprintf(&b, "%d%s%d%s;", r.version, r.opCode, r.len, r.event)
 	return b.Bytes(), nil
 }
 
 // Lets assume the last byte of the data contains the ;
 func (r *RegEvent) Unmarshal(data []byte) error {
 	// Read the byte array and extract the information from the data
-	r.Version = data[0]
+	r.version = data[0]
 	v, err := strconv.Atoi(string(data[0]))
 	if err != nil {
 		return fmt.Errorf("cannot parse version, Reason: %s", err.Error())
 	}
-	r.Version = byte(v)
-	r.OpCode = data[1:3]
+	r.version = byte(v)
+	r.opCode = data[1:3]
 	l, err := strconv.Atoi(string(data[3:5]))
 	if err != nil {
 		return fmt.Errorf("cannot parse len, Reason: %s", err.Error())
 	}
-	r.Len = byte(l)
+	r.len = byte(l)
 
-	data_len := r.Len + 5
+	data_len := r.len + 5
 
-	r.Event = data[5:data_len]
+	r.event = data[5:data_len]
 	return nil
 }
