@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+
+	"github.com/LoneWolf38/registry/pkg/registry"
 )
 
 var (
@@ -16,7 +18,7 @@ var (
 // TCP Data is represented as follows in string format for version 1
 // Version:OpCode:Len:Data
 // Example: 1:RE:12:192.168.1.0
-type RegEvent struct {
+type HeartBeat struct {
 	// version stores the version of the protocol
 	// V1 is for text based TCP protocol
 	// V2 will have binary based TCP protocol
@@ -36,8 +38,8 @@ type RegEvent struct {
 	event []byte // Stores the data of the events kind of like headers with metadata
 }
 
-func NewRegEvent(version uint8, opCode []byte, event []byte) RegEvent {
-	return RegEvent{
+func NewHB(version uint8, opCode []byte, event []byte) HeartBeat {
+	return HeartBeat{
 		version: version,
 		opCode:  opCode,
 		len:     uint8(len(event)),
@@ -45,14 +47,15 @@ func NewRegEvent(version uint8, opCode []byte, event []byte) RegEvent {
 	}
 }
 
-func (r *RegEvent) Marshal() ([]byte, error) {
+// marshalls the heartbeat to a stream of bytes
+func (r *HeartBeat) Marshal() ([]byte, error) {
 	var b bytes.Buffer
 	fmt.Fprintf(&b, "%d%s%d%s;", r.version, r.opCode, r.len, r.event)
 	return b.Bytes(), nil
 }
 
-// Lets assume the last byte of the data contains the ;
-func (r *RegEvent) Unmarshal(data []byte) error {
+// unmarshalls the stream of bytes in to HeartBeat
+func (r *HeartBeat) Unmarshal(data []byte) error {
 	// Read the byte array and extract the information from the data
 	r.version = data[0]
 	v, err := strconv.Atoi(string(data[0]))
@@ -71,4 +74,11 @@ func (r *RegEvent) Unmarshal(data []byte) error {
 
 	r.event = data[5:data_len]
 	return nil
+}
+
+// parses the heartbeat to an registry record
+// TODO: Implement this!!!
+func (r *HeartBeat) Parse() (registry.Record, error) {
+	var rr registry.Record
+	return rr, nil
 }

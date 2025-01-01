@@ -36,7 +36,7 @@ func (rc *RegEventClient) Close() error {
 	return rc.conn.Close()
 }
 
-func (rc *RegEventClient) Send(regEvent RegEvent) error {
+func (rc *RegEventClient) Send(regEvent HeartBeat) error {
 	d, err := regEvent.Marshal()
 	if err != nil {
 		return err
@@ -62,7 +62,7 @@ func NewEventServer(proto string, port uint16) (RegEventServer, error) {
 
 func (r RegEventServer) Start() {
 	log.Println("started the event server")
-	regEvents := make(chan RegEvent)
+	regEvents := make(chan HeartBeat)
 	go func() {
 		for {
 			conn, err := r.listner.Accept()
@@ -93,11 +93,11 @@ func (r RegEventServer) Start() {
 	}
 }
 
-func readConn(r RegEventServer, regEvents chan RegEvent) error {
+func readConn(r RegEventServer, regEvents chan HeartBeat) error {
 	defer r.conn.Close()
 	// read upto 1024 bytes
 	data := make([]byte, 1024)
-	regEvent := RegEvent{}
+	regEvent := HeartBeat{}
 	buf := bytes.Buffer{}
 	for {
 		_, err := r.conn.Read(data)

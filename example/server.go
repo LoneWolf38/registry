@@ -19,15 +19,15 @@ const (
 var hostList = []string{"192.168.1.2", "192.168.2.2", "192.168.22.23", "10.10.10.10", "10.10.10.11", "10.10.10.12"}
 
 func main() {
-	regEventList := []protocol.RegEvent{}
-	deregEventlist := []protocol.RegEvent{}
-	shutdownEventList := []protocol.RegEvent{}
-	statusEventList := []protocol.RegEvent{}
+	regEventList := []protocol.HeartBeat{}
+	deregEventlist := []protocol.HeartBeat{}
+	shutdownEventList := []protocol.HeartBeat{}
+	statusEventList := []protocol.HeartBeat{}
 	for _, host := range hostList {
-		regEventList = append(regEventList, protocol.NewRegEvent(uint8(1), []byte("01"), []byte(host)))
-		deregEventlist = append(deregEventlist, protocol.NewRegEvent(uint8(1), []byte("10"), []byte(host)))
-		shutdownEventList = append(shutdownEventList, protocol.NewRegEvent(uint8(1), []byte("00"), []byte(host)))
-		statusEventList = append(statusEventList, protocol.NewRegEvent(uint8(1), []byte("11"), []byte(host)))
+		regEventList = append(regEventList, protocol.NewHB(uint8(1), []byte("01"), []byte(host)))
+		deregEventlist = append(deregEventlist, protocol.NewHB(uint8(1), []byte("10"), []byte(host)))
+		shutdownEventList = append(shutdownEventList, protocol.NewHB(uint8(1), []byte("00"), []byte(host)))
+		statusEventList = append(statusEventList, protocol.NewHB(uint8(1), []byte("11"), []byte(host)))
 	}
 	go run_server()
 	// spawn 100 clients
@@ -38,7 +38,7 @@ func main() {
 	run_client(shutdownEventList, 1)
 }
 
-func run_client(events []protocol.RegEvent, freq int) {
+func run_client(events []protocol.HeartBeat, freq int) {
 	for _, event := range events {
 		for range freq {
 			c, err := protocol.NewRegEventClient(TCP_PROTOCOL, uint16(SERVER_PORT))
