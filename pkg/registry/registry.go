@@ -18,3 +18,13 @@ type Record struct {
 	ts       time.Time
 	upTime   time.Time
 }
+
+// hash creates a hash from the record which will be used as index in a go map[type]type
+//
+// the hash function works as follows
+//
+// Hostname will be turned to xor func hash
+// ipAddr will be
+func (r *Record) hash() []byte {
+	return nil
+}
